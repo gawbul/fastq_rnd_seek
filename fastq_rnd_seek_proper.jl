@@ -1,9 +1,9 @@
-#!/Applications/Julia-0.3.5.app/Contents/Resources/julia/bin/julia
+#!/Applications/Julia-0.3.8.app/Contents/Resources/julia/bin/julia
 # required modules
 require("argparse")
 using ArgParse
 
-# parse arguments
+# function to parse arguments
 function parse_arguments()
   s = ArgParseSettings()
   @add_arg_table s begin
@@ -18,7 +18,7 @@ function parse_arguments()
   return parse_args(s)
 end
 
-# get random position in file
+# function to return random position in file
 function get_random_pos(rnd_num)
   return rand(0:rnd_num)
 end
@@ -27,11 +27,11 @@ end
 function main()
   # retrieve parsed arguments
   parsed_args = parse_arguments()
-  
+
   # set filename
   filename = parsed_args["filename"]
   numsamples = parsed_args["numsamples"]
-  
+
   # check file exists
   if !isfile(filename)
     throw(LoadError("", 0, "Filename $(filename) not found."))
@@ -39,19 +39,28 @@ function main()
 
   # get file size
   infilesize = filesize(filename)
-  println("$(infilesize)")
-  
+
   # open input file
   infh = open(filename, "r")
 
   # iterate number of samples times
   for i = 1:numsamples
-    pos = get_random_pos(infilesize)
-    seek(infh, pos)
-    println(pos)
-    println(position(infh)) 
-    println(readline(infh))
-    exit()
+    valid_record = false
+    lines = Array(ASCIIString, 4)
+    while !valid_record
+      pos = get_random_pos(infilesize)
+      seek(infh, pos)
+      readuntil(infh, "\n@")
+      pos = position(infh) - 1
+      seek(infh, pos)
+      for j in [1:4]
+        lines[j] = rstrip(readline(infh))
+      end
+      if beginswith(lines[1], "@") && beginswith(lines[3], "+")
+        valid_record = true
+      end
+    end
+    println(join(lines, "\n"))
   end
 
   # close file handle
@@ -60,4 +69,3 @@ end
 
 # call main function
 main()
-
