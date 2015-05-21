@@ -44,6 +44,7 @@ function main()
   infh = open(filename, "r")
 
   # iterate number of samples times
+  observed = Array(Int64, 0)
   for i = 1:numsamples
     valid_record = false
     lines = Array(ASCIIString, 4)
@@ -57,7 +58,10 @@ function main()
         lines[j] = rstrip(readline(infh))
       end
       if beginswith(lines[1], "@") && beginswith(lines[3], "+")
-        valid_record = true
+        if !in(pos, observed)
+          valid_record = true
+          push!(observed, pos)
+        end
       end
     end
     println(join(lines, "\n"))
